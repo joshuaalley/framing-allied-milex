@@ -4,6 +4,10 @@
 .Ruserdata
 .rds
 
+# ignore text files
+congres-metadata
+congress-speechs
+
 # ignore temp files w/ trailing ~
 *~
 
