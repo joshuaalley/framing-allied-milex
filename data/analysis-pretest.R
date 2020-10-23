@@ -37,7 +37,7 @@ mturk.data <- left_join(mturk.data, ip.data, by = "IPAddress")
 mturk.data <- filter(mturk.data, IP_Hub_recommend_block != 1)
 
 
-# attention checks
+# manipulation checks
 table(mturk.data$Q31)
 table(mturk.data$FL_12_DO)
 # seems like disproportionate is the most common response 
@@ -264,12 +264,24 @@ plot(favor.anova, 1)
 TukeyHSD(favor.anova)
 kruskal.test(nato.favor.num ~ factor(FL_12_DO), data = mturk.data)
 
+
+# rescale variables
+mturk.data.rs <- select(mturk.data,
+                        nato.favor.num, favor.dum,
+                        withdraw, force,
+                          treat.ex, treat.ca,
+                          partisanship.num, ideology, natl.pride,
+                          unsc.num, mil.serv, age, gender,
+                          college.grad)
+mturk.data.rs[, 5:ncol(mturk.data.rs)] <- lapply(mturk.data.rs[, 5:ncol(mturk.data.rs)], 
+                                 function(x) arm::rescale(x, binary.inputs = "0/1"))
+
 # regression with controls
 favor.reg <- lm(nato.favor.num ~ treat.ex + treat.ca +
                   partisanship.num + ideology + natl.pride +
                   unsc.num + mil.serv + age + gender +
                   college.grad, 
-                data = mturk.data)
+                data = mturk.data.rs)
 summary(favor.reg)
 
 # dummy for favorable
@@ -279,7 +291,7 @@ favor.glm <- brglm(favor.dum ~ treat.ex + treat.ca +
                       unsc.num + mil.serv + age + gender +
                       college.grad, 
                     family = binomial(link = "logit"),
-                    data = mturk.data)
+                    data = mturk.data.rs)
 summary(favor.glm)
 
 # logit of support for withdrawal
@@ -288,7 +300,7 @@ withdraw.glm <- brglm(withdraw ~ treat.ex + treat.ca +
                       unsc.num + mil.serv + age + gender +
                       college.grad, 
                     family = binomial(link = "logit"),
-                    data = mturk.data)
+                    data = mturk.data.rs)
 summary(withdraw.glm)
 
 
@@ -298,7 +310,7 @@ force.glm <- brglm(force ~ treat.ex + treat.ca +
                      unsc.num + mil.serv + age + gender +
                      college.grad, 
                     family = binomial(link = "logit"),
-                    data = mturk.data)
+                    data = mturk.data.rs)
 summary(force.glm)
 
 
@@ -318,7 +330,7 @@ results <- bind_rows(tidy(favor.reg),
 results$term <- recode(results$term,
                       treat.ex = "Exchange", treat.ca = "Collective Action",
                       partisanship.num = "Partisan ID", ideology = "Ideology",
-                      natl.pride = "Natl. Pride", unsc.cor = "FP Knowledge",
+                      natl.pride = "Natl. Pride", unsc.num = "FP Knowledge",
                       age = "Age", gender = "Gender",
                       mil.serv = "Military Service", college.grad = "College Grad")
 # order terms factor for plotting
@@ -344,29 +356,29 @@ ggsave("figures/mturk-res-both.png", height = 6, width = 8)
 # regression with controls
 favor.reg.ex <- lm(nato.favor.num ~ treat.ex + 
                      partisanship.num + ideology + natl.pride +
-                     unsc.cor + mil.serv + age +
+                     unsc.num + mil.serv + age +
                      college.grad, 
-                data = mturk.data)
+                data = mturk.data.rs)
 summary(favor.reg.ex)
 
 
 # logit of support for withdrawal
 withdraw.glm.ex <- brglm(withdraw ~ treat.ex +  
                            partisanship.num + ideology + natl.pride +
-                           unsc.cor + mil.serv + age +
+                           unsc.num + mil.serv + age +
                            college.grad, 
                     family = binomial(link = "logit"),
-                    data = mturk.data)
+                    data = mturk.data.rs)
 summary(withdraw.glm.ex)
 
 
 # logit of support for intervention
 force.glm.ex <- glm(force ~ treat.ex +
                         partisanship.num + ideology + natl.pride +
-                        unsc.cor + mil.serv + age +
+                        unsc.num + mil.serv + age +
                         college.grad, 
                    family = binomial(link = "logit"),
-                   data = mturk.data)
+                   data = mturk.data.rs)
 summary(force.glm.ex)
 
 
@@ -386,7 +398,7 @@ results.ex <- bind_rows(tidy(favor.reg.ex),
 results.ex$term <- recode(results.ex$term,
                        treat.ex = "Exchange", treat.ca = "Collective Action",
                        partisanship.num = "Partisan ID", ideology = "Ideology",
-                       natl.pride = "Natl. Pride", unsc.cor = "FP Knowledge",
+                       natl.pride = "Natl. Pride", unsc.num = "FP Knowledge",
                        mil.serv = "Military Service", college.grad = "College Grad")
 # order terms factor for plotting
 results.ex$term <- factor(results.ex$term, levels = unique(results.ex$term),
@@ -580,8 +592,6 @@ ggplot(aes(x = mechanism,
   geom_bar() +
   labs(x = "Mechanism", y = "Count") +
   theme_bw()
-ggsave("figures/neutral-mech.png",
-       height = 4, width = 6)
 
 
 # Map of respondents
