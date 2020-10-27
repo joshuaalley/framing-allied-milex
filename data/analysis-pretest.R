@@ -240,7 +240,8 @@ fr.raw <- ggplot(mturk.data, aes(x = Q26,
            theme_bw()
 fr.raw
 
-wd.raw <- ggplot(mturk.data, aes(x = Q27,
+wd.raw <- filter(mturk.data, !is.na(Q27)) %>% # drop one missing
+        ggplot(aes(x = Q27,
                        group = FL_12_DO,
                        fill = FL_12_DO)) +
            geom_bar(position = position_dodge()) +
@@ -652,7 +653,7 @@ us.map +
     size = .5, bins = 10, alpha = .75,
     data = mturk.data.nohi
   ) +
-  scale_fill_viridis_b(name = "% No Interv.")
+  scale_fill_viridis_b(name = "% Support\n Interv.")
 ggsave("presentation/noforce-map.png", height = 6, width = 8)
 
 
